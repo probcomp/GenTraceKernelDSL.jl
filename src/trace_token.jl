@@ -42,11 +42,17 @@ Base.getindex(trace::TraceToken) = Gen.get_retval(trace)
 
 function dualize_choicemap!(c::Gen.ChoiceMap, dual_choices::Gen.ChoiceMap, cfg::DFD.DiffConfig)
     for (key, value) in Gen.get_values_shallow(c)
-        dual_choices[key] = dualize_value(value, cfg)
+        if !has_value(dual_choices, key)
+            dual_choices[key] = dualize_value(value, cfg)
+        end
     end
     for (key, value) in Gen.get_submaps_shallow(c)
-        submap = choicemap()
-        Gen.set_submap!(dual_choices, key, submap)
+        if has_submap(dual_choices, key)
+            submap = get_submap(dual_choices, key)
+        else
+            submap = choicemap()
+            Gen.set_submap!(dual_choices, key, submap)
+        end
         dualize_choicemap!(Gen.get_submap(c, key), submap, cfg)
     end
 end
