@@ -1,0 +1,11 @@
+name = "GenTraceKernelDSL"
+uuid = "291bb3ad-7d9c-4053-a5d5-3e3d67792b79"
+authors = ["alex-lew <alexl.mail@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+DynamicForwardDiff = "fe4ab2f8-f6ba-4905-aa0c-1342e36db709"
+Gen = "ea4f424c-a589-11e8-07c0-fd5c91b9da4a"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
