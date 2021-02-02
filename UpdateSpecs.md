@@ -13,7 +13,7 @@ The kernel function now returns either:
 ## Interface for writing compatible UpdateSpec types
 
 For an `UpdateSpecLeaf` subtype to be compatible with the kernel DSL, it must implemenent
-`undualize` and `incorporate_regenerate_constraints`.
+`GenTraceKernelDSL.undualize` and `GenTraceKernelDSL.incorporate_regenerate_constraints!`.
 
 `undualize(updatespec)` should convert any value within the spec from a `Dual` value to a regular value.  (`undualize` can be
 called on a choicemap to help with this.)
