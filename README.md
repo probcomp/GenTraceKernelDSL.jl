@@ -9,6 +9,17 @@ described in [Marco Cusumano-Towner's thesis](https://www.mct.dev/assets/mct-the
 [Automating Involutive MCMC using Probabilistic and Differentiable Programming](https://arxiv.org/abs/2007.09871).
 Unlike Gen's trace transform DSL, this package does not enforce separation of the "probablistic" and "differentiable" components of a trace translator: users may freely mix sampling with deterministic transformations to describe arbitrary stochastic transformations.
 
+## `updatespecs` branch
+This branch extends the kernel functionality to support the fork of Gen at
+https://github.com/georgematheos/Gen/tree/regenchoicemap/.  This 
+highly unstable Gen fork adds support for, among other things, a more general
+interface for specifying updates to traces.
+
+This fork of `GenTraceKernelDSL` allows users to write kernels which output
+arbitrary `UpdateSpec`s, including ones which use regeneration as part of the proposal.
+For details on the interface custom `UpdateSpec` types must satisfy to be compatible
+with this DSL, see `UpdateSpecs.md`.
+
 ## DSL
 
 A kernel function is declared using the `@kernel` macro.

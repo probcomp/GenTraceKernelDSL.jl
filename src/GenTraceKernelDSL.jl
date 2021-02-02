@@ -1,6 +1,6 @@
 module GenTraceKernelDSL
 
-import Gen
+using Gen
 using DynamicForwardDiff
 using MacroTools
 

@@ -43,6 +43,24 @@ macro kernel(fndef)
     end
 end
 
+"""
+    ret = run_with_choices(kernel::Kernel, args, constraints::Gen.ChoiceMap)
+
+Runs the kernel, constraining all addresses using the values in `constraints`, and returns the kernel's return value.
+"""
+function run_with_choices(kernel::Kernel, args, constraints::Gen.ChoiceMap)
+    subconstraints(addr) = addr === nothing ? constraints : get_submap(constraints, addr)
+    sample(::Gen.Distribution, args, addr) = constraints[addr]
+    function sample(::Gen.GenerativeFunction, args, addr=nothing)
+        trace, weight = Gen.generate(f, args, subconstraints(addr))
+        @assert isapprox(weight, get_score(trace)) "All choices should be constrained!"
+        TraceToken(trace, Gen.choicemap(), DynamicForwardDiff.DiffConfig())
+    end
+    sample(f::Kernel, args, addr=nothing) = run_with_choices(f, args, subconstraints(addr))
+
+    return kernel.fn(sample, args...)
+end
+
 # Returns outputs as dual numbers, as well as a ChoiceMap of all choices made, and a score.
 function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConfig())
     choices = Gen.choicemap()

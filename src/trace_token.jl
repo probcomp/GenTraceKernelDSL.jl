@@ -40,7 +40,7 @@ end
 Base.getindex(trace::TraceToken) = Gen.get_retval(trace)
 
 
-function dualize_choicemap!(c::Gen.ChoiceMap, dual_choices::Gen.ChoiceMap, cfg::DFD.DiffConfig)
+function dualize!(c::Gen.ChoiceMap, dual_choices::Gen.ChoiceMap, cfg::DFD.DiffConfig)
     for (key, value) in Gen.get_values_shallow(c)
         if !has_value(dual_choices, key)
             dual_choices[key] = dualize_value(value, cfg)
@@ -53,23 +53,21 @@ function dualize_choicemap!(c::Gen.ChoiceMap, dual_choices::Gen.ChoiceMap, cfg::
             submap = choicemap()
             Gen.set_submap!(dual_choices, key, submap)
         end
-        dualize_choicemap!(Gen.get_submap(c, key), submap, cfg)
+        dualize!(Gen.get_submap(c, key), submap, cfg)
     end
 end
 
-function undualize_choices(c::Gen.ChoiceMap)
+undualize(v::Gen.Value) = Value(DFD.value(get_value(v)))
+function undualize(c::Gen.ChoiceMap)
     undual = Gen.choicemap()
-    for (key, v) in Gen.get_values_shallow(c)
-        undual[key] = DFD.value(v)
-    end
-    for (key, value) in Gen.get_submaps_shallow(c)
-        Gen.set_submap!(undual, key, undualize_choices(Gen.get_submap(c, key)))
+    for (addr, subtree) in Gen.get_subtrees_shallow(c)
+        Gen.set_subtree!(undual, addr, undualize(subtree))
     end
     return undual
 end
 
 function Gen.get_choices(t::TraceToken)
     choices = Gen.get_choices(t.trace)
-    dualize_choicemap!(choices, t.dual_choices, cfg)
+    dualize!(choices, t.dual_choices, cfg)
     return t.dual_choices
 end
