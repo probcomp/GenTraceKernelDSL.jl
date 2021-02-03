@@ -104,7 +104,9 @@ end
 
     trace, = generate(model, (), choicemap((:y1, 1), (:y2, 1), (:z, false), (:m, 1.2)))
     @test_throws Exception Gen.mh(trace, MHProposal(invalid_split_merge_proposal1), check=true)
-    @test_throws Exception Gen.mh(trace, MHProposal(invalid_split_merge_proposal2), check=true)
+    @test_logs (:error, r"Proposal|Trace choices did not match after round trip!  Differences:") match_mode=:any begin
+        @test_throws Exception Gen.mh(trace, MHProposal(invalid_split_merge_proposal2), check=true)
+    end
 
 end
 

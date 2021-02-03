@@ -83,10 +83,11 @@ function run_mcmc_kernel(trace::Gen.Trace, k::MHProposal, other_args = (); check
     if check
         new_trace_token = TraceToken(new_trace, Gen.choicemap(), DynamicForwardDiff.DiffConfig())
         (roundtrip_update, roundtrip_bwd_spec) = run_with_choices(k.proposal, (new_trace_token, other_args...), backward_choices)
+        roundtrip_update = undualize(roundtrip_update)
         (roundtrip_bwd_choices, roundtrip_bwd_regenerated) = unpack_backward_spec(roundtrip_bwd_spec)
 
         roundtrip_update = incorporate_regenerate_constraints!(roundtrip_update, get_choices(trace), reverse_regenerated)
-        rountrip_trace, _, _, _ = Gen.update(new_trace, get_args(new_trace), ((Gen.NoChange() for _ in get_args(trace))...,), roundtrip_update, EmptyAddressTree())
+        roundtrip_trace, _, _, _ = Gen.update(new_trace, get_args(new_trace), ((Gen.NoChange() for _ in get_args(trace))...,), roundtrip_update, EmptyAddressTree())
         
         check_round_trip(get_choices(trace), get_choices(roundtrip_trace), "Trace")
         check_round_trip(forward_choices, undualize(roundtrip_bwd_choices), "Proposal")
