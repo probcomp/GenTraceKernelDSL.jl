@@ -12,8 +12,10 @@ The kernel function now returns either:
 
 ## Interface for writing compatible UpdateSpec types
 
-For an `UpdateSpecLeaf` subtype to be compatible with the kernel DSL, it must implemenent
-`GenTraceKernelDSL.undualize` and `GenTraceKernelDSL.incorporate_regenerate_constraints!`.
+For an `UpdateSpecLeaf` subtype to be compatible with the kernel DSL, it must implemenent:
+- `GenTraceKernelDSL.undualize`
+- `GenTraceKernelDSL.incorporate_regenerate_constraints!`
+- `GenTraceKernelDSL.dualized_values`
 
 `undualize(updatespec)` should convert any value within the spec from a `Dual` value to a regular value.  (`undualize` can be
 called on a choicemap to help with this.)
@@ -21,3 +23,6 @@ called on a choicemap to help with this.)
 `incorporate_regenerate_constraints(updatespec, trace_choices::ChoiceMap, reverse_regenerated::Selection)` should return an update spec equivalent to
 `updatespec`, but with all the addresses in `reverse_regenerated` constrained to take the values they take in `trace_choices`.
 It may mutate the given `updatespec` (and then re-return it).
+
+`dualized_values(updatespec)` should return all values within the updatespec which are `DynamicForwardDiff.Dual`s.  This *must* return all dualed continuous
+values which will be incorporated into the next model state for this to be calculated correctly.

@@ -7,7 +7,19 @@ struct MHProposal
     proposal :: Kernel # Trace -> Tuple{ChoiceMap, ChoiceMap} -- of target and self
 end
 
-function accumulate_output_partials!(choices, outputs)
+function dualized_values(spec::Gen.AddressTree{<:Union{Value, Selection}})
+    (v for v in all_values_deep(spec) if v isa DFD.Dual)
+end
+function accumulate_output_partials!(spec::Gen.UpdateSpec, outputs)
+    for v in dualized_values(spec)
+        p = DFD.partials(v)
+        if !iszero(p)
+            push!(outputs, p)
+        end
+    end
+end
+
+function accumulate_output_partials!(choices::Gen.AddressTree{<:Union{Value, Selection}}, outputs)
     for (k, v) in Gen.get_values_shallow(choices)
         if v isa DFD.Dual
             p = DFD.partials(v)
@@ -63,7 +75,7 @@ function run_mcmc_kernel(trace::Gen.Trace, k::MHProposal, other_args = (); check
     new_trace, model_log_weight, = Gen.update(trace, get_args(trace), ((Gen.NoChange() for _ in get_args(trace))...,),
         undualize(proposed_update), invert(reverse_regenerated)
     )
-    
+
     _, backward_score = assess(k.proposal, (new_trace, other_args...), undualize(backward_choices))
 
     jacobian_correction = compute_jacobian_correction(proposed_update, backward_choices)
