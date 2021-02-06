@@ -61,6 +61,13 @@ function run_with_choices(kernel::Kernel, args, constraints::Gen.ChoiceMap)
     return kernel.fn(sample, args...)
 end
 
+# function Gen.random(d::Distribution, args::Vararg{<:DFD.Dual})
+#     Gen.random(d, DFD.value.(args)...)
+# end
+# function Gen.logpdf(d::Distribution, val, args::Vararg{<:DFD.Dual})
+#     Gen.logpdf(d, val, DFD.value.(args)...)
+# end
+
 # Returns outputs as dual numbers, as well as a ChoiceMap of all choices made, and a score.
 function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConfig())
     choices = Gen.choicemap()
@@ -68,7 +75,7 @@ function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConf
 
     # Continuous choices
     function sample(f::Gen.Distribution{<: Union{Float64, AbstractArray{Float64}}}, args, addr)
-        x = Gen.random(f, args...)
+        x = Gen.random(f, (DFD.value.(args))...)
         choices[addr] = x
         score += Gen.logpdf(f, x, args...)
         dualized = DFD.new_dual(diff_config, x)
@@ -77,7 +84,7 @@ function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConf
 
     # Discrete choices
     function sample(f::Gen.Distribution, args, addr)
-        x = Gen.random(f, args...)
+        x = Gen.random(f, (DFD.value.(args))...)
         choices[addr] = x
         score += Gen.logpdf(f, x, args...)
         return x
@@ -85,7 +92,7 @@ function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConf
 
     # Gen Generative Functions
     function sample(f::Gen.GenerativeFunction, args, addr = nothing)
-        trace, subscore = Gen.propose(f, args)
+        trace, subscore = Gen.propose(f, DFD.value.(args))
         score += subscore
         submap = Gen.get_choices(trace)
         if isnothing(addr)
@@ -98,7 +105,7 @@ function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConf
 
     # Other kernels
     function sample(f::Kernel, args, addr = nothing)
-        ret, submap, subscore = propose(f, args, diff_config)
+        ret, submap, subscore = propose(f, DFD.value.(args), diff_config)
         score += subscore
         if isnothing(addr)
             choices = merge(choices, submap)
@@ -117,18 +124,18 @@ end
 function assess(kernel::Kernel, args, choices::Gen.ChoiceMap)
     score = 0.0
     function increment_score(f::Gen.Distribution, args, addr)
-        score += Gen.logpdf(f, choices[addr], args...)
+        score += Gen.logpdf(f, choices[addr], (DFD.value.(args))...)
         return choices[addr]
     end
     function increment_score(f::Gen.GenerativeFunction, args, addr = nothing)
         submap = isnothing(addr) ? choices : Gen.get_submap(choices, addr)
-        trace, subscore = Gen.generate(f, args, submap)
+        trace, subscore = Gen.generate(f, DFD.value.(args), submap)
         score += subscore
         return trace
     end
     function increment_score(f::Kernel, args, addr = nothing)
         submap = isnothing(addr) ? choices : Gen.get_submap(choices, addr)
-        retval, subscore = assess(f, args, submap)
+        retval, subscore = assess(f, DFD.value.(args), submap)
         score += subscore
         return retval
     end

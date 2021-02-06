@@ -36,17 +36,17 @@ function get_differences(c1, c2)
     return (in1not2, in2not1, diffval)
 end
 
-function errorlog_on_differences(c1, c2)
-    (in1not2, in2not1, diffval) = get_differences(c1, c2)
+function errorlog_on_differences(before_rt, after_rt)
+    (in1not2, in2not1, diffval) = get_differences(before_rt, after_rt)
     strs = []
     for addr in in1not2
-        push!(strs, "\n  Found in 1 but not 2: $addr")
+        push!(strs, "\n  Found before round trip but not after round trip: $addr")
     end
     for addr in in2not1
-        push!(strs, "\n  Found in 2 but not 1: $addr")
+        push!(strs, "\n  Found after round trip but not before round trip: $addr")
     end
     for addr in diffval
-        push!(strs, "\n  Different vals at: $addr ")#is $(c1[addr]) in first and $(c2[addr]) in second")
+        push!(strs, "\n  Different vals at: $addr. Value is $(before_rt[addr]) initially and $(after_rt[addr]) after round trip.")
     end
 
     if !isempty(strs)
@@ -54,10 +54,10 @@ function errorlog_on_differences(c1, c2)
     end
 end
 
-function check_round_trip(c1, c2, str)
-    if !isapprox(c1, c2)
+function check_round_trip(before_rt, after_rt, str)
+    if !isapprox(before_rt, after_rt)
         @error("$str choices did not match after round trip!  Differences:")
-        errorlog_on_differences(c1, c2)
+        errorlog_on_differences(before_rt, after_rt)
         error("transform round trip check failed")
     end
     return nothing

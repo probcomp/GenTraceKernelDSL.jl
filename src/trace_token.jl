@@ -58,8 +58,10 @@ function dualize!(c::Gen.ChoiceMap, dual_choices::Gen.ChoiceMap, cfg::DFD.DiffCo
 end
 
 undualize(v::Gen.Value) = Value(DFD.value(get_value(v)))
-function undualize(c::Gen.ChoiceMap)
-    undual = Gen.choicemap()
+undualize(s::Gen.AddressTree{<:SelectionLeaf}) = s
+undualize(::EmptyAddressTree) = EmptyAddressTree()
+function undualize(c::Gen.AddressTree{<:Union{Value, SelectionLeaf}})
+    undual = c isa Gen.ChoiceMap ? Gen.choicemap() : Gen.regenchoicemap()
     for (addr, subtree) in Gen.get_subtrees_shallow(c)
         Gen.set_subtree!(undual, addr, undualize(subtree))
     end

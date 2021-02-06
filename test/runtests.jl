@@ -2,6 +2,8 @@ module GenTraceKernelDSLTests
 using Test
 using Gen
 using GenTraceKernelDSL
+using DynamicForwardDiff
+const DFD = DynamicForwardDiff
 
 ### Example from `example.jl` ###
 
@@ -114,6 +116,22 @@ end
     trace, = generate(model, (), choicemap((:y1, 5), (:y2, 1), (:z, false), (:m, 1.2)))
     @test_throws Exception Gen.mh(trace, MHProposal(split_merge_proposal); check=true,
         observations=choicemap((:y1, 1))
+    )
+end
+
+@testset "undualize" begin
+    cfg = DFD.DiffConfig()
+    x = DFD.new_dual(cfg, 10)
+    y = DFD.new_dual(cfg, nothing)
+    cm = regenchoicemap(
+        :a => 5,
+        :b => x,
+        (:c => :a, 1),
+        (:c => :b, y),
+        (:d, AllSelection())
+    )
+    @test GenTraceKernelDSL.undualize(cm) == regenchoicemap(
+        :a => 5, :b => 10, (:c => :a, 1), (:c => :b, nothing), (:d, AllSelection())
     )
 end
 
