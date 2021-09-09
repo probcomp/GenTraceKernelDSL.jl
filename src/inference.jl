@@ -104,7 +104,8 @@ function run_mcmc_kernel(trace::Gen.Trace, k::MHProposal, other_args = ();
     log_roundtrip_bwd_choices=false,
     log_roundtrip_bwd_regenerated=false,
     log_new_trace_choicemap=false,
-    log_roundtrip_update_with_regen=false
+    log_roundtrip_update_with_regen=false,
+    roundtrip_atol=nothing
 )
     diff_config = DynamicForwardDiff.DiffConfig()
     trace_token = TraceToken(trace, Gen.choicemap(), diff_config)
@@ -162,13 +163,14 @@ function run_mcmc_kernel(trace::Gen.Trace, k::MHProposal, other_args = ();
 
         roundtrip_trace, _, _, _ = Gen.update(new_trace, get_args(new_trace), ((Gen.NoChange() for _ in get_args(trace))...,), roundtrip_update, EmptyAddressTree())
         
-        check_round_trip(get_choices(trace), get_choices(roundtrip_trace), "Trace")
-        check_round_trip(forward_choices, undualize(roundtrip_bwd_choices), "Proposal")
+        check_round_trip(get_choices(trace), get_choices(roundtrip_trace), "Trace"; atol=roundtrip_atol)
+        check_round_trip(forward_choices, undualize(roundtrip_bwd_choices), "Proposal"; atol=roundtrip_atol)
 
         # TODO: should we have an explicit check for whether the regeneration reversal specificaions were valid?
         # or do we catch enough of those errors in the choicemap roundtrip checks?
      end
 
+    # println("model_ratio = $model_log_weight | fwd = $(-forward_score) | bwd = $backward_score | sum = $(model_log_weight - forward_score + backward_score)")
     return new_trace, model_log_weight - forward_score + backward_score
 end
 
@@ -182,12 +184,12 @@ function Gen.mh(trace::Gen.Trace, k::MHProposal, other_args=();
     log_roundtrip_bwd_choices=false,
     log_roundtrip_bwd_regenerated=false,
     log_new_trace_choicemap=false,
-    log_roundtrip_update_with_regen=false
-
+    log_roundtrip_update_with_regen=false,
+    roundtrip_atol=nothing
 )
     new_trace, alpha = run_mcmc_kernel(trace, k, other_args;
         do_round_trip_check=check, log_fwd_choices, log_proposed_update, log_bwd_choices, log_bwd_regenerated,
-        log_new_trace_choicemap, log_roundtrip_update_spec, log_roundtrip_bwd_choices, log_roundtrip_bwd_regenerated, log_roundtrip_update_with_regen
+        log_new_trace_choicemap, log_roundtrip_update_spec, log_roundtrip_bwd_choices, log_roundtrip_bwd_regenerated, log_roundtrip_update_with_regen, roundtrip_atol
     )
     if log(rand()) < alpha
         if check && !isempty(observations)
@@ -198,6 +200,7 @@ function Gen.mh(trace::Gen.Trace, k::MHProposal, other_args=();
         return trace, false
     end
 end
+Gen.mh(trace::Gen.Trace, k::Kernel, args...; kwargs...) = Gen.mh(trace, MHProposal(k), args...; kwargs...)
 
 #######
 # SMC #  TODO!!
