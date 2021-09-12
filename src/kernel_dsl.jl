@@ -92,9 +92,9 @@ function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConf
 
     # Gen Generative Functions
     function sample(f::Gen.GenerativeFunction, args, addr = nothing)
-        trace, subscore = Gen.propose(f, DFD.value.(args))
-        score += subscore
-        submap = Gen.get_choices(trace)
+        trace = Gen.simulate(f, DFD.value.(args))
+        score += get_score(trace)
+        submap = get_choices(trace)
         if isnothing(addr)
             choices = merge(choices, submap)
         else

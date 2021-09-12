@@ -129,7 +129,6 @@ function run_mcmc_kernel(trace::Gen.Trace, k::MHProposal, other_args = ();
     new_trace, model_log_weight, = Gen.update(trace, get_args(trace), ((Gen.NoChange() for _ in get_args(trace))...,),
         undualize(proposed_update), invert(reverse_regenerated)
     )
-
     _, backward_score = assess(k.proposal, (new_trace, other_args...), undualize(backward_choices))
 
     if log_new_trace_choicemap

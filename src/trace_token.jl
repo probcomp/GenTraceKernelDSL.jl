@@ -13,10 +13,19 @@ function Gen.get_score(t::TraceToken)
     return Gen.get_score(t.trace)
 end
 
+global retval_warning_given = false
 function Gen.get_retval(t::TraceToken)
-    @warn "GenTraceKernelDSL's calculated weights may be incorrect if proposals depend continuously on result of `get_retval`."
+    if !retval_warning_given
+        @warn "GenTraceKernelDSL's calculated weights may be incorrect if proposals depend continuously on result of `get_retval`.\nThis warning will not be given again."
+        global retval_warning_given = true
+    end
     return Gen.get_retval(t.trace)
 end
+
+# for users who know what they are doing:
+get_retval_nowarning(t::TraceToken) = Gen.get_retval(t.trace)
+get_undualed(t::TraceToken, addr) = t.trace[addr]
+get_undualed(trace::Gen.Trace, addr) = trace[addr]
 
 @inline function Gen.get_gen_fn(t::TraceToken)
     Gen.get_gen_fn(t.trace)
