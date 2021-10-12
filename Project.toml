@@ -1,7 +1,7 @@
 name = "GenTraceKernelDSL"
 uuid = "291bb3ad-7d9c-4053-a5d5-3e3d67792b79"
 authors = ["alex-lew <alexl.mail@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DynamicForwardDiff = "fe4ab2f8-f6ba-4905-aa0c-1342e36db709"
