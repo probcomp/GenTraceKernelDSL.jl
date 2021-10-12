@@ -243,11 +243,11 @@ version = "0.61.0+0"
 
 [[Gen]]
 deps = ["DataStructures", "Distributions", "ForwardDiff", "FunctionalCollections", "JSON", "LinearAlgebra", "MacroTools", "Random", "ReverseDiff", "SpecialFunctions"]
-git-tree-sha1 = "da954922ee47232e67d614a93fdd752ce11880d5"
+git-tree-sha1 = "14934d6112d528732e81f2f4d5b7959f142deaf9"
 repo-rev = "genworldmodels-main"
 repo-url = "https://github.com/georgematheos/Gen"
 uuid = "ea4f424c-a589-11e8-07c0-fd5c91b9da4a"
-version = "0.4.3"
+version = "0.4.4"
 
 [[GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
