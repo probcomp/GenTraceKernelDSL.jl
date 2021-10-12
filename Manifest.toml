@@ -27,6 +27,12 @@ git-tree-sha1 = "e2f47f6d8337369411569fd45ae5753ca10394c6"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.0+6"
 
+[[CodeTracking]]
+deps = ["InteractiveUtils", "UUIDs"]
+git-tree-sha1 = "8ad457cfeb0bca98732c97958ef81000a543e73e"
+uuid = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
+version = "1.0.5"
+
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random", "StaticArrays"]
 git-tree-sha1 = "3141757b5832ee7a0386db87997ee5a23ff20f4d"
@@ -111,9 +117,7 @@ version = "0.23.11"
 
 [[DynamicForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "Random", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "2cc00ac95984231ca3677cfc5c88888f91f765e4"
-repo-rev = "main"
-repo-url = "https://github.com/probcomp/DynamicForwardDiff.jl"
+path = "/Users/georgematheos/Developer/research/DynamicForwardDiff.jl/"
 uuid = "fe4ab2f8-f6ba-4905-aa0c-1342e36db709"
 version = "0.1.0"
 
@@ -141,6 +145,9 @@ git-tree-sha1 = "3cc57ad0a213808473eafef4845a74766242e05f"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.3.1+4"
 
+[[FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
+
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
 git-tree-sha1 = "502b3de6039d5b78c76118423858d981349f3823"
@@ -167,9 +174,9 @@ version = "0.4.2"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "NaNMath", "Random", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "8de2519a83c6c1c2442c2f481dd9a8364855daf4"
+git-tree-sha1 = "c26b56e9b9f0687f7ca887f6b6ded03d269e0e35"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "0.10.14"
+version = "0.10.15"
 
 [[FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
@@ -213,12 +220,10 @@ uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
 version = "0.53.0+0"
 
 [[Gen]]
-deps = ["DataStructures", "Distributions", "ForwardDiff", "FunctionalCollections", "JSON", "LinearAlgebra", "MacroTools", "Parameters", "Random", "ReverseDiff", "SpecialFunctions"]
-git-tree-sha1 = "4620051a5d60c5d3760c61710e1f3d7987e6c644"
-repo-rev = "master"
-repo-url = "https://github.com/probcomp/Gen.jl"
+deps = ["DataStructures", "Distributions", "ForwardDiff", "FunctionalCollections", "JSON", "LinearAlgebra", "MacroTools", "Random", "ReverseDiff", "SpecialFunctions"]
+path = "/Users/georgematheos/Developer/research/Gen"
 uuid = "ea4f424c-a589-11e8-07c0-fd5c91b9da4a"
-version = "0.4.0"
+version = "0.4.3"
 
 [[GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
@@ -285,6 +290,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "9aff0587d9603ea0de2c6f6300d9f9492bbefbd3"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.0.1+3"
+
+[[JuliaInterpreter]]
+deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
+git-tree-sha1 = "fe18234f046a772069abdc8d29f073d8c0f092a5"
+uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
+version = "0.8.8"
 
 [[LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -377,6 +388,12 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
+[[LoweredCodeUtils]]
+deps = ["JuliaInterpreter"]
+git-tree-sha1 = "f008f15264cc11de6de8cbdda3d4712dd152f0c3"
+uuid = "6f1432cf-f94c-5a45-995e-cdbf5db27b0b"
+version = "1.2.7"
+
 [[MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "6a8a2a625ab0dea913aba95c11370589e0239ff0"
@@ -458,12 +475,6 @@ deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse", "Test"]
 git-tree-sha1 = "95a4038d1011dfdbde7cecd2ad0ac411e53ab1bc"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
 version = "0.10.1"
-
-[[Parameters]]
-deps = ["OrderedCollections", "UnPack"]
-git-tree-sha1 = "38b2e970043613c187bd56a995fe2e551821eb4a"
-uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
-version = "0.12.1"
 
 [[Parsers]]
 deps = ["Dates"]
@@ -551,6 +562,12 @@ deps = ["DiffResults", "DiffRules", "ForwardDiff", "FunctionWrappers", "LinearAl
 git-tree-sha1 = "ca062d55a167a81909772a325932e72c389f9724"
 uuid = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 version = "1.5.0"
+
+[[Revise]]
+deps = ["CodeTracking", "Distributed", "FileWatching", "JuliaInterpreter", "LibGit2", "LoweredCodeUtils", "OrderedCollections", "Pkg", "REPL", "Requires", "UUIDs", "Unicode"]
+git-tree-sha1 = "176c817f5e5a9c78fd0d91483dadc88cc5805c41"
+uuid = "295af30f-e4ad-537b-8983-00126c2a3abe"
+version = "3.1.11"
 
 [[Rmath]]
 deps = ["Random", "Rmath_jll"]
@@ -652,11 +669,6 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [[UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
-
-[[UnPack]]
-git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
-uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
-version = "1.0.2"
 
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
