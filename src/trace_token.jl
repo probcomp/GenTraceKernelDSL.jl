@@ -42,7 +42,13 @@ function Base.getindex(t::TraceToken, addr)
     end
     trace = t.trace
     v = dualize_value(trace[addr], t.diff_config)
-    t.dual_choices[addr] = v
+    try
+        t.dual_choices[addr] = v
+    catch e
+        @error "Issue tracking dual of $addr.  dual_choices ="
+        display(t.dual_choices)
+        throw(e)
+    end
     return v
 end
 
