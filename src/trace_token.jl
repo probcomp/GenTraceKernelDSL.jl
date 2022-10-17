@@ -18,6 +18,11 @@ function Gen.get_retval(t::TraceToken)
     return Gen.get_retval(t.trace)
 end
 
+# for users who know what they are doing:
+get_retval_nowarning(t::TraceToken) = Gen.get_retval(t.trace)
+get_undualed(t::TraceToken, addr) = t.trace[addr]
+get_undualed(trace::Gen.Trace, addr) = trace[addr]
+
 @inline function Gen.get_gen_fn(t::TraceToken)
     Gen.get_gen_fn(t.trace)
 end

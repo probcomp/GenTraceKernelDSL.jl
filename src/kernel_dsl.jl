@@ -50,24 +50,26 @@ function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConf
 
     # Continuous choices
     function sample(f::Gen.Distribution{<: Union{Float64, AbstractArray{Float64}}}, args, addr)
-        x = Gen.random(f, args...)
+        arg_values = DFD.value.(args)
+        x = Gen.random(f, arg_values...)
         choices[addr] = x
-        score += Gen.logpdf(f, x, args...)
+        score += Gen.logpdf(f, x, arg_values...)
         dualized = DFD.new_dual(diff_config, x)
         return dualized
     end
 
     # Discrete choices
     function sample(f::Gen.Distribution, args, addr)
-        x = Gen.random(f, args...)
+        arg_values = DFD.value.(args)
+        x = Gen.random(f, arg_values...)
         choices[addr] = x
-        score += Gen.logpdf(f, x, args...)
+        score += Gen.logpdf(f, x, arg_values...)
         return x
     end
 
     # Gen Generative Functions
     function sample(f::Gen.GenerativeFunction, args, addr = nothing)
-        trace, subscore = Gen.propose(f, args)
+        trace, subscore = Gen.propose(f, DFD.value.(args))
         score += subscore
         submap = Gen.get_choices(trace)
         if isnothing(addr)
