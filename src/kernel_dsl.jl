@@ -5,6 +5,12 @@ struct Kernel
     fn :: Function
 end
 
+# A wrapper for a Kernel which lets other kernels
+# access its choices.
+struct TracedKernel
+    kernel :: Kernel
+end
+
 # Modified from Gen
 function desugar_tildes(expr, sample_func)
     MacroTools.postwalk(expr) do e
@@ -69,9 +75,9 @@ function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConf
 
     # Gen Generative Functions
     function sample(f::Gen.GenerativeFunction, args, addr = nothing)
-        trace, subscore = Gen.propose(f, DFD.value.(args))
-        score += subscore
+        trace = Gen.simulate(f, DFD.value.(args))
         submap = Gen.get_choices(trace)
+        score += Gen.get_score(trace)
         if isnothing(addr)
             choices = merge(choices, submap)
         else
@@ -90,6 +96,16 @@ function propose(kernel::Kernel, args, diff_config = DynamicForwardDiff.DiffConf
             Gen.set_submap!(choices, addr, submap)
         end
         return ret
+    end
+    function sample(f::TracedKernel, args, addr = nothing)
+        ret, submap, subscore = propose(f.kernel, args, diff_config)
+        score += subscore
+        if isnothing(addr)
+            choices = merge(choices, submap)
+        else
+            Gen.set_submap!(choices, addr, submap)
+        end
+        return (ret, submap, subscore)
     end
 
     ret = kernel.fn(sample, args...)
@@ -116,6 +132,13 @@ function assess(kernel::Kernel, args, choices::Gen.ChoiceMap)
         score += subscore
         return retval
     end
+    function increment_score(f::TracedKernel, args, addr = nothing)
+        submap = isnothing(addr) ? choices : Gen.get_submap(choices, addr)
+        retval, subscore = assess(f.kernel, args, submap)
+        score += subscore
+        return (retval, submap, subscore)
+    end
+
     ret = kernel.fn(increment_score, args...)
     return ret, score
 end

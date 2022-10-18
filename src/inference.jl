@@ -34,7 +34,7 @@ function compute_jacobian_correction(proposed_update, backward_choices)
     accumulate_output_partials!(backward_choices, output_partials)
 
     if isempty(output_partials)
-        return 0.0
+        return 1.0
     end
 
     jacobian = hcat(output_partials...)
@@ -77,7 +77,7 @@ function run_mh(trace::Gen.Trace, k::MHProposal, other_args=())
     end
 end
 
-function run_smc_step(trace::Gen.Trace, k::SMCStep, fwd_args=(), bwd_args=())
+function run_smc_step(trace::Gen.Trace, k::SMCStep, fwd_args=(), bwd_args=(); check_are_inverses=false)
     diff_config = DFD.DiffConfig()
     trace_token = TraceToken(trace, Gen.choicemap(), diff_config)
 
@@ -92,17 +92,33 @@ function run_smc_step(trace::Gen.Trace, k::SMCStep, fwd_args=(), bwd_args=())
     )
     
     # Assess backward kernel score
-    _, backward_score = assess(k.backward, (new_model_trace, bwd_args...), undualize_choices(backward_choices))
+    (bwd_update, fwd_constraints), backward_score = assess(k.backward, (new_model_trace, bwd_args...), undualize_choices(backward_choices))
+
+    if check_are_inverses
+        println("doing RT check!")
+        check_round_trip(forward_choices, fwd_constraints, "Proposal")
+
+        reconstructed_original_tr, _, _, _ = Gen.update(new_model_trace, Gen.get_args(trace),  map(x -> Gen.UnknownChange(), Gen.get_args(trace)), bwd_update)
+        check_round_trip(forward_choices, fwd_constraints, "Proposal")
+        check_round_trip(Gen.get_choices(trace), Gen.get_choices(reconstructed_original_tr), "Trace")
+    end
+
+    # println("""
+    # model_ratio = $model_ratio
+    # backward_score = $backward_score
+    # forward_score = $forward_score
+    # log(jacobian_correction) = $(log(jacobian_correction))
+    # """)
 
     return new_model_trace, model_ratio + backward_score - forward_score + log(jacobian_correction)
 end
 
 # Add methods to `particle_filter_step!` for SMCP³
-function Gen.particle_filter_step!(state::Gen.ParticleFilterState{U}, step::SMCStep, fwd_args::Tuple, bwd_args::Tuple) where {U}
+function Gen.particle_filter_step!(state::Gen.ParticleFilterState{U}, step::SMCStep, fwd_args::Tuple, bwd_args::Tuple; check_are_inverses=false) where {U}
     num_particles = length(state.traces)
     log_incremental_weights = Vector{Float64}(undef, num_particles) 
     for i=1:num_particles
-        (state.new_traces[i], log_weight) = run_smc_step(state.traces[i], step, fwd_args, bwd_args)
+        (state.new_traces[i], log_weight) = run_smc_step(state.traces[i], step, fwd_args, bwd_args; check_are_inverses)
         log_incremental_weights[i] = log_weight
         state.log_weights[i] += log_weight
     end
@@ -114,9 +130,9 @@ function Gen.particle_filter_step!(state::Gen.ParticleFilterState{U}, step::SMCS
     return (log_incremental_weights,)
 end
 function Gen.particle_filter_step!(state::Gen.ParticleFilterState{U}, new_args::Tuple, argdiffs::Tuple,
-    observations::Gen.ChoiceMap, k::Kernel, l::Kernel, fwd_args::Tuple, bwd_args::Tuple) where {U}
+    observations::Gen.ChoiceMap, k::Kernel, l::Kernel, fwd_args::Tuple, bwd_args::Tuple; check_are_inverses=false) where {U}
     step = SMCStep(k, l, Gen.get_gen_fn(first(state.traces)), new_args, observations)
-    return Gen.particle_filter_step!(state, step, fwd_args, bwd_args)
+    return Gen.particle_filter_step!(state, step, fwd_args, bwd_args; check_are_inverses)
 end
 
 export MHProposal, SMCStep, run_mh, run_smc_step
