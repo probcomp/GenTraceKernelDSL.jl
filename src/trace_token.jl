@@ -84,6 +84,6 @@ end
 
 function Gen.get_choices(t::TraceToken)
     choices = Gen.get_choices(t.trace)
-    dualize_choicemap!(choices, t.dual_choices, cfg)
+    dualize_choicemap!(choices, t.dual_choices, t.diff_config)
     return t.dual_choices
 end

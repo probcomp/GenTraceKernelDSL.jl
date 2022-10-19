@@ -95,7 +95,6 @@ function run_smc_step(trace::Gen.Trace, k::SMCStep, fwd_args=(), bwd_args=(); ch
     (bwd_update, fwd_constraints), backward_score = assess(k.backward, (new_model_trace, bwd_args...), undualize_choices(backward_choices))
 
     if check_are_inverses
-        println("doing RT check!")
         check_round_trip(forward_choices, fwd_constraints, "Proposal")
 
         reconstructed_original_tr, _, _, _ = Gen.update(new_model_trace, Gen.get_args(trace),  map(x -> Gen.UnknownChange(), Gen.get_args(trace)), bwd_update)
