@@ -1,19 +1,72 @@
 using LinearAlgebra
 
-# General SMC Step -- does not exploit incremental computation when target and previous model 
-# are the same generative function (just with different args / obs).
-struct SMCStep
-    forward      :: Kernel  # Trace -> Tuple{ChoiceMap, ChoiceMap} -- of target and backward
-    backward     :: Kernel  # Trace -> Tuple{ChoiceMap, ChoiceMap} -- of target and forward
-    target       :: Gen.GenerativeFunction
-    target_args  :: Tuple
-    observations :: Gen.ChoiceMap
+### Top-level inference algorithms ###
+
+## SMCP3 Update
+## See github.com/probcomp/GenSMCP3.jl for more details.
+function run_smcp3_step(
+    trace::Gen.Trace, new_target_args, target_argdiffs, update_constraint,
+    k::Kernel, l::Kernel, k_args::Tuple, l_args::Tuple;
+    check_are_inverses=false
+)
+    diff_config = DFD.DiffConfig()
+    trace_token = TraceToken(trace, Gen.choicemap(), diff_config)
+
+        # Run forward and compute proposed constraints, backward kernel choices, and jacobian correction.
+    (proposed_update, backward_choices), forward_choices, forward_score = propose(
+        k, (trace_token, k_args...), diff_config
+    )
+    jacobian_correction = compute_jacobian_correction(proposed_update, backward_choices)
+
+    # Obtain new trace + model ratio
+    new_model_trace, model_ratio, _, _ = Gen.update(
+        trace, new_target_args, target_argdiffs,
+        Gen.merge(undualize_choices(proposed_update), update_constraint)
+    )
+
+    # Assess backward kernel score
+    (bwd_update, fwd_constraints), backward_score = assess(
+        l, (new_model_trace, l_args...), undualize_choices(backward_choices)
+    )
+
+    if check_are_inverses
+        check_round_trip(forward_choices, fwd_constraints, "Proposal")
+
+        reconstructed_original_tr, _, _, _ = Gen.update(new_model_trace, Gen.get_args(trace),  map(x -> Gen.UnknownChange(), Gen.get_args(trace)), bwd_update)
+        check_round_trip(forward_choices, fwd_constraints, "Proposal")
+        check_round_trip(Gen.get_choices(trace), Gen.get_choices(reconstructed_original_tr), "Trace")
+    end
+   
+    return new_model_trace, model_ratio + backward_score - forward_score + log(jacobian_correction)
 end
 
-struct MHProposal
-    proposal :: Kernel # Trace -> Tuple{ChoiceMap, ChoiceMap} -- of target and self
+## Metropolis-Hastings (Involutive MCMC)
+## TODO: arxiv link
+function run_mcmc_kernel(trace::Gen.Trace, proposal::Kernel, other_args = ())
+    diff_config = DynamicForwardDiff.DiffConfig()
+    trace_token = TraceToken(trace, Gen.choicemap(), diff_config)
+    
+    (proposed_update, backward_choices), forward_choices, forward_score = propose(proposal, (trace_token, other_args...), diff_config)
+    new_trace, model_log_weight, = Gen.update(trace, trace.args, ((Gen.NoChange() for _ in trace.args)...,), undualize_choices(proposed_update))
+    _, backward_score = assess(proposal, (new_trace, other_args...), undualize_choices(backward_choices))
+
+    jacobian_correction = compute_jacobian_correction(proposed_update, backward_choices)
+
+    return new_trace, model_log_weight - forward_score + backward_score + log(jacobian_correction)
 end
 
+## Override the default Gen.metropolis_hastings function
+## TODO: add support for `check` and `observations` kwargs
+function Gen.metropolis_hastings(trace, proposal::Kernel)
+    new_trace, alpha = run_mcmc_kernel(trace, proposal)
+    if log(rand()) < alpha
+        return new_trace, true
+    else
+        return trace, false
+    end
+end
+
+### Sub-computations for inference algorithms ###
 function accumulate_output_partials!(choices, outputs)
     for (k, v) in Gen.get_values_shallow(choices)
         if v isa DFD.Dual
@@ -54,84 +107,3 @@ function compute_jacobian_correction(proposed_update, backward_choices)
 
     abs(det(trimmed_jacobian))
 end
-
-function run_mcmc_kernel(trace::Gen.Trace, k::MHProposal, other_args = ())
-    diff_config = DynamicForwardDiff.DiffConfig()
-    trace_token = TraceToken(trace, Gen.choicemap(), diff_config)
-    
-    (proposed_update, backward_choices), forward_choices, forward_score = propose(k.proposal, (trace_token, other_args...), diff_config)
-    new_trace, model_log_weight, = Gen.update(trace, trace.args, ((Gen.NoChange() for _ in trace.args)...,), undualize_choices(proposed_update))
-    _, backward_score = assess(k.proposal, (new_trace, other_args...), undualize_choices(backward_choices))
-
-    jacobian_correction = compute_jacobian_correction(proposed_update, backward_choices)
-
-    return new_trace, model_log_weight - forward_score + backward_score + log(jacobian_correction)
-end
-
-function run_mh(trace::Gen.Trace, k::MHProposal, other_args=())
-    new_trace, alpha = run_mcmc_kernel(trace, k, other_args)
-    if log(rand()) < alpha
-        return new_trace, true
-    else
-        return trace, false
-    end
-end
-
-function run_smc_step(trace::Gen.Trace, k::SMCStep, fwd_args=(), bwd_args=(); check_are_inverses=false)
-    diff_config = DFD.DiffConfig()
-    trace_token = TraceToken(trace, Gen.choicemap(), diff_config)
-
-    # Run forward and compute proposed constraints, backward kernel choices, and jacobian correction.
-    (proposed_update, backward_choices), forward_choices, forward_score = propose(k.forward, (trace_token, fwd_args...), diff_config)
-    jacobian_correction = compute_jacobian_correction(proposed_update, backward_choices)
-
-    # Obtain new trace + model ratio
-    new_model_trace, model_ratio, _, _ = Gen.update(
-        trace, k.target_args, map(x -> Gen.UnknownChange(), k.target_args),
-        Gen.merge(undualize_choices(proposed_update), k.observations)
-    )
-    
-    # Assess backward kernel score
-    (bwd_update, fwd_constraints), backward_score = assess(k.backward, (new_model_trace, bwd_args...), undualize_choices(backward_choices))
-
-    if check_are_inverses
-        check_round_trip(forward_choices, fwd_constraints, "Proposal")
-
-        reconstructed_original_tr, _, _, _ = Gen.update(new_model_trace, Gen.get_args(trace),  map(x -> Gen.UnknownChange(), Gen.get_args(trace)), bwd_update)
-        check_round_trip(forward_choices, fwd_constraints, "Proposal")
-        check_round_trip(Gen.get_choices(trace), Gen.get_choices(reconstructed_original_tr), "Trace")
-    end
-
-    # println("""
-    # model_ratio = $model_ratio
-    # backward_score = $backward_score
-    # forward_score = $forward_score
-    # log(jacobian_correction) = $(log(jacobian_correction))
-    # """)
-
-    return new_model_trace, model_ratio + backward_score - forward_score + log(jacobian_correction)
-end
-
-# Add methods to `particle_filter_step!` for SMCP³
-function Gen.particle_filter_step!(state::Gen.ParticleFilterState{U}, step::SMCStep, fwd_args::Tuple, bwd_args::Tuple; check_are_inverses=false) where {U}
-    num_particles = length(state.traces)
-    log_incremental_weights = Vector{Float64}(undef, num_particles) 
-    for i=1:num_particles
-        (state.new_traces[i], log_weight) = run_smc_step(state.traces[i], step, fwd_args, bwd_args; check_are_inverses)
-        log_incremental_weights[i] = log_weight
-        state.log_weights[i] += log_weight
-    end
-    # swap references
-    tmp = state.traces
-    state.traces = state.new_traces
-    state.new_traces = tmp
-
-    return (log_incremental_weights,)
-end
-function Gen.particle_filter_step!(state::Gen.ParticleFilterState{U}, new_args::Tuple, argdiffs::Tuple,
-    observations::Gen.ChoiceMap, k::Kernel, l::Kernel, fwd_args::Tuple, bwd_args::Tuple; check_are_inverses=false) where {U}
-    step = SMCStep(k, l, Gen.get_gen_fn(first(state.traces)), new_args, observations)
-    return Gen.particle_filter_step!(state, step, fwd_args, bwd_args; check_are_inverses)
-end
-
-export MHProposal, SMCStep, run_mh, run_smc_step

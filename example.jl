@@ -81,7 +81,7 @@ function do_inference_rjmcmc(y1, y2)
     m1 = Float64[]
     m2 = Float64[]
     for iter=1:100
-        trace, = run_mh(trace, MHProposal(split_merge_proposal))
+        trace, = mh(trace, split_merge_proposal)
         trace, = mh(trace, mean_random_walk_proposal, ())
         push!(zs, trace[:z])
         push!(m, trace[:z] ? NaN : trace[:m])

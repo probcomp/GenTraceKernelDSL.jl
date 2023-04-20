@@ -2,7 +2,7 @@
 
 This package provides a DSL for constructing _trace kernels_, stochastic
 maps between the traces of [Gen](https://github.com/probcomp/Gen.jl) generative
-functions, for use as (generalized) Metropolis-Hastings or SMC proposals.
+functions, for use as (generalized) Metropolis-Hastings or proposal distributions in sequential Monte Carlo.  (Specifically, trace kernels are used to define a a type of sequential Monte Carlo algorithm called an [SMCP<sup>3</sup>](github.com/probcomp/GenSMCP3.jl) algorithm.)
 
 This package can be viewed as a refactoring of [Gen's Trace Translator functionality](https://github.com/probcomp/Gen.jl/blob/a96a77991e0e43f208272e9241c8f2434ffdedbf/docs/src/ref/trace_translators.md),
 described in [Marco Cusumano-Towner's thesis](https://www.mct.dev/assets/mct-thesis.pdf) and also in the arXiv preprint
@@ -23,7 +23,7 @@ As in Gen, `x = {:x} ~ f()` can be shortened to `x ~ f()`, and—for generative 
 
 Kernels intended for use as MH proposals should accept a current trace as their first argument, and return a Tuple of: (1) a `ChoiceMap` of proposed values to update in the trace, and (2) a `ChoiceMap` specifying a reverse move. 
 
-Kernels inteded for use as SMC proposals should be written in pairs: a forward and backward kernel. The forward (backward) kernel should accept a previous (subsequent) model trace as its first argument, and return a Tuple containing: (1) a `ChoiceMap` specifying a proposed next (previous) model state, and (2) a `ChoiceMap` of the backward (forward) kernel that would recover the previous (subsequent) model state.
+Kernels inteded for use as SMC proposals should be written in pairs: a forward and backward kernel. The forward (backward) kernel should accept a previous (subsequent) model trace as its first argument, and return a Tuple containing: (1) a `ChoiceMap` specifying a proposed next (previous) model state, and (2) a `ChoiceMap` of the backward (forward) kernel that would recover the previous (subsequent) model state.  See [GenSMCP3](github.com/probcomp/GenSMCP3.jl) for details of how to use kernel DSL proposals within SMC, and for inter-operation between the kernel DSL and [Gen's particle filtering library](github.com/probcomp/GenParticleFilters.jl).
 
 For example, here is what [Gen's example split-merge proposal](https://github.com/probcomp/Gen.jl/blob/master/examples/involutive_mcmc/involution_mh_minimal_example.jl) looks like written in the DSL:
 
@@ -42,7 +42,8 @@ For example, here is what [Gen's example split-merge proposal](https://github.co
 end
 ```
 
-Kernels can be wrapped in `MHProposal` or `SMCStep` objects and passed to `mh(trace, proposal, args)` or `run_smc_step(trace, step, fwd_args, bwd_args)` respectively.
+Kernels can be passed to `Gen.metropolis_hastings(trace, proposal)` for use in Metropolis Hastings MCMC, or used with [GenSMCP3](github.com/probcomp/GenSMCP3.jl) for use in sequential Monte Carlo.
 
+<!-- Kernels can be wrapped in `MHProposal` or `SMCStep` objects and passed to `mh(trace, proposal, args)` or `run_smc_step(trace, step, fwd_args, bwd_args)` respectively. -->
 
 See `example.jl` for a full example.

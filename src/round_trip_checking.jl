@@ -1,4 +1,5 @@
-using Gen
+import Gen: get_values_shallow, has_value, get_submaps_shallow, get_submap
+
 function get_differences(c1, c2; is_approx=isapprox)
     in1not2 = []
     in2not1 = []
