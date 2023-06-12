@@ -40,6 +40,45 @@ function run_smcp3_step(
     return new_model_trace, model_ratio + backward_score - forward_score + log(jacobian_correction)
 end
 
+Gen.@gen (static) function emptygf()
+    return nothing
+end
+Gen.@load_generated_functions()
+
+# This runs an SMC update, from an empty initial trace.
+# The trace passed into the update will be an empty trace with no arguments, which returns nothing.
+function run_initial_smcp3_step(
+    target, target_args, constraint, k::Kernel, l::Kernel, k_args::Tuple, l_args::Tuple;
+    check_are_inverses=false
+)
+    diff_config = DFD.DiffConfig()
+    trace_token = TraceToken(Gen.simulate(emptygf, ()), Gen.choicemap(), diff_config)
+
+    (proposed_update, backward_choices), forward_choices, forward_score = propose(
+        k, (trace_token, k_args...), diff_config
+    )
+    jacobian_correction = compute_jacobian_correction(proposed_update, backward_choices)
+
+    # Obtain new trace + model ratio
+    new_model_trace, generate_ratio = Gen.generate(
+        target, target_args,
+        Gen.merge(undualize_choices(proposed_update), constraint)
+    )
+
+    # Assess backward kernel score
+    (bwd_update, fwd_constraints), backward_score = assess(
+        l, (new_model_trace, l_args...), undualize_choices(backward_choices)
+    )
+
+    @assert isempty(bwd_update) "Backward trace must be empty in an initial SMCP3 proposal."
+
+    if check_are_inverses
+        check_round_trip(forward_choices, fwd_constraints, "Proposal")
+    end
+
+    return new_model_trace, generate_ratio + backward_score - forward_score + log(jacobian_correction)
+end
+
 ## Metropolis-Hastings (Involutive MCMC)
 ## TODO: arxiv link
 function run_mcmc_kernel(trace::Gen.Trace, proposal::Kernel, other_args = ())
